@@ -1,45 +1,36 @@
 import { Stack } from 'expo-router';
 import Constants from 'expo-constants';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 const RELEASES_LATEST_URL = 'https://github.com/rahulrathod2002/Ultimate-Games/releases/latest/';
 const RELEASES_API_URL = 'https://api.github.com/repos/rahulrathod2002/Ultimate-Games/releases/latest';
+const ASSET_NAME_REGEX = /UltimateGames V(\d+)\.apk/i;
 
-const normalizeVersion = (value: string | undefined | null) => {
-  if (!value) return '';
-  const match = String(value).trim().replace(/^v/i, '').match(/(\d+(\.\d+){0,3})/);
-  const cleaned = match ? match[1] : '';
-  if (!cleaned.includes('.')) return '';
-  return cleaned;
-};
-
-const compareSemver = (a: string, b: string) => {
-  const pa = normalizeVersion(a).split('.').map((n) => parseInt(n, 10) || 0);
-  const pb = normalizeVersion(b).split('.').map((n) => parseInt(n, 10) || 0);
-  const len = Math.max(pa.length, pb.length);
-  for (let i = 0; i < len; i += 1) {
-    const na = pa[i] ?? 0;
-    const nb = pb[i] ?? 0;
-    if (na > nb) return 1;
-    if (na < nb) return -1;
-  }
-  return 0;
+const normalizeBuildNumber = (value: unknown) => {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  return Number.isFinite(parsed) ? parsed : 0;
 };
 
 const UpdatePrompt = () => {
   const [visible, setVisible] = useState(false);
-  const [latestTag, setLatestTag] = useState('');
-  const currentVersion = useMemo(() => {
-    return normalizeVersion(
-      Constants.nativeAppVersion ||
-        Constants.expoConfig?.version ||
-        Constants.manifest?.version ||
-        Constants.manifest2?.extra?.expoClient?.version,
+  const [latestLabel, setLatestLabel] = useState('');
+  const [latestUrl, setLatestUrl] = useState(RELEASES_LATEST_URL);
+  const hasChecked = useRef(false);
+
+  const currentBuild = useMemo(() => {
+    return (
+      normalizeBuildNumber(Constants.nativeBuildVersion) ||
+      normalizeBuildNumber(Constants.expoConfig?.android?.versionCode) ||
+      normalizeBuildNumber(Constants.expoConfig?.extra?.buildNumber) ||
+      normalizeBuildNumber(Constants.manifest?.extra?.buildNumber) ||
+      normalizeBuildNumber(Constants.manifest2?.extra?.buildNumber)
     );
   }, []);
 
   useEffect(() => {
+    if (hasChecked.current) return;
+    hasChecked.current = true;
     let mounted = true;
     const checkLatest = async () => {
       try {
@@ -48,13 +39,15 @@ const UpdatePrompt = () => {
         });
         if (!response.ok) return;
         const data = await response.json();
-        const tag = normalizeVersion(data?.tag_name);
-        if (!tag || !mounted || !currentVersion) return;
-        if (tag === currentVersion) return;
-        if (compareSemver(tag, currentVersion) > 0) {
-          setLatestTag(tag);
-          setVisible(true);
-        }
+        if (!mounted || !currentBuild) return;
+        const asset = (data?.assets ?? []).find((item: { name?: string }) => ASSET_NAME_REGEX.test(item?.name));
+        const match = asset?.name?.match(ASSET_NAME_REGEX);
+        const availableBuild = match ? normalizeBuildNumber(match[1]) : 0;
+        if (!availableBuild || currentBuild >= availableBuild) return;
+
+        setLatestLabel(asset?.name ?? `UltimateGames V${availableBuild}.apk`);
+        setLatestUrl(asset?.browser_download_url ?? RELEASES_LATEST_URL);
+        setVisible(true);
       } catch (error) {
         // fail silently
       }
@@ -63,11 +56,11 @@ const UpdatePrompt = () => {
     return () => {
       mounted = false;
     };
-  }, [currentVersion]);
+  }, [currentBuild]);
 
   const handleDownload = () => {
     setVisible(false);
-    Linking.openURL(RELEASES_LATEST_URL);
+    Linking.openURL(latestUrl);
   };
 
   return (
@@ -76,7 +69,7 @@ const UpdatePrompt = () => {
         <View style={styles.updateCard}>
           <Text style={styles.updateTitle}>New version available</Text>
           <Text style={styles.updateSubtitle}>
-            A new version ({latestTag}) is available. Download the latest release.
+            A new version ({latestLabel}) is available. Download the latest release.
           </Text>
           <View style={styles.updateActions}>
             <Pressable onPress={() => setVisible(false)} style={[styles.updateButton, styles.cancelButton]}>

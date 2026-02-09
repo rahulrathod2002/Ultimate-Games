@@ -22,13 +22,13 @@ const Home = () => {
           <View key={section.id} style={{ marginBottom: spacing.xl }}>
             <SectionHeader title={section.title} subtitle={section.subtitle} />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-              {section.items.map((game) => (
+              {section.items.map((game, index) => (
                 <View key={game.id} style={{ width: '48%', marginBottom: spacing.md }}>
                   <GameCard
                     title={game.title}
                     subtitle={game.subtitle}
                     icon={game.icon}
-                    badge={game.badge}
+                    order={`#${index + 1}`}
                     onPress={() => router.push(game.route)}
                   />
                 </View>

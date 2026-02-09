@@ -3,7 +3,7 @@ import { Image, TouchableOpacity, View } from 'react-native';
 import AppText from './AppText';
 import { colors, spacing, shadows } from '../theme';
 
-const GameCard = ({ title, subtitle, icon, badge, onPress }) => {
+const GameCard = ({ title, subtitle, icon, order, onPress }) => {
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -24,18 +24,20 @@ const GameCard = ({ title, subtitle, icon, badge, onPress }) => {
         {icon ? (
           <Image source={icon} style={{ width: 48, height: 48, borderRadius: 12 }} />
         ) : null}
-        {badge ? (
+        {order ? (
           <View
             style={{
-              backgroundColor: colors.accent,
+              backgroundColor: colors.surfaceElevated ?? colors.surface,
               paddingHorizontal: spacing.sm,
               paddingVertical: spacing.xs,
-              borderRadius: 999,
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: colors.border,
               alignSelf: 'flex-start',
             }}
           >
-            <AppText variant="caption" style={{ color: '#fff' }}>
-              {badge}
+            <AppText variant="caption" style={{ color: colors.textSecondary }}>
+              {order}
             </AppText>
           </View>
         ) : null}

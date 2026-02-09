@@ -1,28 +1,34 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 
 const RummyMode = () => {
-    const navigation = useNavigation();
+    const router = useRouter();
 
-    const handleModeSelect = (mode) => {
-        navigation.navigate('Rummy', { mode });
+    const handleModeSelect = (players) => {
+        router.push({ pathname: '/games/rummy', params: { players: String(players) } });
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Select Mode</Text>
+            <Text style={styles.title}>Select Players</Text>
             <TouchableOpacity
                 style={styles.button}
-                onPress={() => handleModeSelect('computer')}
+                onPress={() => handleModeSelect(2)}
             >
-                <Text style={styles.buttonText}>Vs. Computer</Text>
+                <Text style={styles.buttonText}>2 Players</Text>
             </TouchableOpacity>
             <TouchableOpacity
                 style={styles.button}
-                onPress={() => handleModeSelect('friend')}
+                onPress={() => handleModeSelect(4)}
             >
-                <Text style={styles.buttonText}>Vs. Friend</Text>
+                <Text style={styles.buttonText}>4 Players</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.button}
+                onPress={() => handleModeSelect(6)}
+            >
+                <Text style={styles.buttonText}>6 Players</Text>
             </TouchableOpacity>
         </View>
     );
