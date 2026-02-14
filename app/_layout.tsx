@@ -6,6 +6,10 @@ import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native'
 const RELEASES_LATEST_URL = 'https://github.com/rahulrathod2002/Ultimate-Games/releases/latest/';
 const RELEASES_API_URL = 'https://api.github.com/repos/rahulrathod2002/Ultimate-Games/releases/latest';
 const ASSET_NAME_REGEX = /UltimateGames V(\d+)\.apk/i;
+type ReleaseAsset = {
+  name?: string;
+  browser_download_url?: string;
+};
 
 const normalizeBuildNumber = (value: unknown) => {
   const parsed = Number.parseInt(String(value ?? ''), 10);
@@ -40,7 +44,9 @@ const UpdatePrompt = () => {
         if (!response.ok) return;
         const data = await response.json();
         if (!mounted || !currentBuild) return;
-        const asset = (data?.assets ?? []).find((item: { name?: string }) => ASSET_NAME_REGEX.test(item?.name));
+        const asset = (data?.assets ?? []).find(
+          (item: ReleaseAsset) => typeof item.name === 'string' && ASSET_NAME_REGEX.test(item.name),
+        );
         const match = asset?.name?.match(ASSET_NAME_REGEX);
         const availableBuild = match ? normalizeBuildNumber(match[1]) : 0;
         if (!availableBuild || currentBuild >= availableBuild) return;
